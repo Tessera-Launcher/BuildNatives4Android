@@ -10,6 +10,7 @@ STAGE="$DIST/tessera-runtime-${LWJGL_VERSION}-${ABI}"
 LWJGL_ROOT="$STAGE/lwjgl/$LWJGL_VERSION"
 LWJGL_OUT="$LWJGL_ROOT/natives/$ABI"
 JAVA_OUT="$BUILD/java/lwjgl/$LWJGL_VERSION"
+JNA_OUT="$STAGE/jna/$JNA_VERSION"
 NATIVE_OUT="$STAGE/native/$ABI"
 LICENSE_OUT="$STAGE/licenses"
 rm -rf "$STAGE"
@@ -29,6 +30,7 @@ required=(
     "$NATIVE_DIR/libfreetype.so"
     "$NATIVE_DIR/libopenal.so"
     "$NATIVE_DIR/libc++_shared.so"
+    "$NATIVE_DIR/jna/$JNA_VERSION/libjnidispatch.so"
 )
 for f in "${required[@]}"; do
     [ -f "$f" ] || { echo "missing build output: $f" >&2; exit 1; }
@@ -43,6 +45,8 @@ cp "$NATIVE_DIR/libshaderc.so" "$NATIVE_OUT"/
 cp "$NATIVE_DIR/libspirv-cross.so" "$NATIVE_OUT"/
 cp "$NATIVE_DIR/libopenal.so" "$NATIVE_OUT"/
 cp "$NATIVE_DIR/libc++_shared.so" "$NATIVE_OUT"/
+mkdir -p "$JNA_OUT"
+cp "$NATIVE_DIR/jna/$JNA_VERSION/libjnidispatch.so" "$JNA_OUT"/
 
 copy_license() {
     local src="$1" dst="$2"
@@ -96,6 +100,7 @@ manifest = {
         'freetype': os.environ.get('FREETYPE_VERSION', 'VER-2-14-3'),
         'openal_soft': os.environ.get('OPENAL_VERSION', '1.25.2'),
         'oboe': os.environ.get('OBOE_VERSION', '1.11.2'),
+        'jna': os.environ.get('JNA_VERSION', '5.17.0'),
     },
     'files': files,
 }
@@ -105,7 +110,7 @@ PY
 
 ZIP="$DIST/tessera-runtime-${LWJGL_VERSION}-${ABI}.zip"
 rm -f "$ZIP"
-(cd "$DIST" && zip -qr "$(basename "$ZIP")" "$(basename "$STAGE")")
+(cd "$STAGE" && zip -qr "$ZIP" .)
 sha256sum "$ZIP" > "$ZIP.sha256"
 
 MANIFEST="$DIST/tessera-runtime-manifest.json"
@@ -124,7 +129,7 @@ manifest = {
     'libc': 'bionic',
     'min_sdk': int(api),
     'ndk': 'r30',
-    'layout': 'lwjgl/<version>/*.jar, lwjgl/<version>/natives/<abi>/*.so, native/<abi>/*.so',
+    'layout': 'lwjgl/<version>/*.jar, lwjgl/<version>/natives/<abi>/*.so, native/<abi>/*.so, jna/<version>/libjnidispatch.so',
     'files': {
         'zip': {
             'name': zip_path.name,
@@ -141,6 +146,7 @@ manifest = {
         'freetype': os.environ.get('FREETYPE_VERSION', 'VER-2-14-3'),
         'openal_soft': os.environ.get('OPENAL_VERSION', '1.25.2'),
         'oboe': os.environ.get('OBOE_VERSION', '1.11.2'),
+        'jna': os.environ.get('JNA_VERSION', '5.17.0'),
     },
     'install': {
         'extract': 'unzip; no top-level directory inside the zip',

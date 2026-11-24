@@ -8,4 +8,5 @@ cd "$(dirname "$0")/.."
 ./scripts/build-spirv-cross.sh
 ./scripts/build-freetype.sh
 ./scripts/build-openal.sh
+./scripts/fetch-jna.sh
 ./scripts/package.sh

@@ -19,6 +19,7 @@ AARs and snapshot jars.
 | FreeType | VER-2-14-3 |
 | OpenAL Soft | 1.25.2 (Oboe + OpenSL backends) |
 | Oboe | 1.11.2 (static, linked into `libopenal.so`) |
+| JNA native | 5.17.0 |
 | NDK | r30 |
 | Android API | 26 |
 | ABI | arm64-v8a |
@@ -45,6 +46,7 @@ Individual steps:
 ./scripts/build-spirv-cross.sh
 ./scripts/build-freetype.sh
 ./scripts/build-openal.sh
+./scripts/fetch-jna.sh
 ./scripts/package.sh
 ```
 
@@ -81,6 +83,8 @@ dist/tessera-runtime-3.4.3-arm64-v8a/
 │   ├── libspirv-cross.so
 │   ├── libopenal.so
 │   └── libc++_shared.so
+├── jna/5.17.0/
+│   └── libjnidispatch.so
 ├── licenses/
 ├── manifest.json
 └── SHA256SUMS
