@@ -19,6 +19,7 @@ AARs and snapshot jars.
 | FreeType | VER-2-14-3 |
 | OpenAL Soft | 1.25.2 (Oboe + OpenSL backends) |
 | Oboe | 1.11.2 (static, linked into `libopenal.so`) |
+| jemalloc | 5.4.0 |
 | JNA native | 5.17.0 |
 | NDK | r30 |
 | Android API | 26 |
@@ -45,6 +46,7 @@ Individual steps:
 ./scripts/build-shaderc.sh
 ./scripts/build-spirv-cross.sh
 ./scripts/build-freetype.sh
+./scripts/build-jemalloc.sh
 ./scripts/build-openal.sh
 ./scripts/fetch-jna.sh
 ./scripts/package.sh
@@ -82,6 +84,7 @@ dist/tessera-runtime-3.4.3-arm64-v8a/
 │   ├── libshaderc.so
 │   ├── libspirv-cross.so
 │   ├── libopenal.so
+│   ├── libjemalloc.so
 │   └── libc++_shared.so
 ├── jna/5.17.0/
 │   └── libjnidispatch.so
@@ -107,6 +110,8 @@ only the Android-specific hooks:
   SDL starts.
 - `SDL_SetWindowRelativeMouseMode` forwards the grab state through
   `CallbackBridge.nativeSetGrabbing`.
+- `SDLVideo.SDL_GetDisplayName` returns a stable Android label instead of
+  passing a possibly-tagged native pointer into LWJGL's UTF-8 reader.
 
 The official `lwjgl-sdl` source is fetched from Maven, patched, and compiled
 against the 3.4.3 jars. No third-party launcher's source tree is required.
@@ -134,6 +139,14 @@ The release also carries `SHA256SUMS` covering the zip and manifest.
   package keeps OpenSL as the recommended default; Oboe can be selected with
   `ALSOFT_DRIVERS=oboe` for testing. AAudio has known route-change issues when
   plugging/unplugging headphones.
+- `libjemalloc.so` is jemalloc 5.4.0. 5.3.x is not sufficient: it lacks
+  `je_free_sized`, which the LWJGL 3.4.3 jemalloc binding requires.
+- GrapheneOS/Android 17 may enable MTE, which tags native pointers in the top
+  byte. LWJGL 3.4.3 on Java 28 reads strings through FFM and rejects those
+  tagged pointers. The launcher must either run with MTE disabled for the app
+  (`android:memtagMode="off"`) or use a runtime with an untagging memory
+  backend. This runtime includes the SDL display-name fallback, but the
+  launcher-side MTE setting is still required for Vulkan extension strings.
 - This repository builds the runtime only. `libfcl.so` / `libpojavexec.so` are
   still FCL-side JNI host libraries and are not rebuilt here.
 - Versions are pinned in `scripts/lib.sh`.

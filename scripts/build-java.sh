@@ -45,6 +45,7 @@ curl -fsSL --retry 3 -o "$JAVA_WORK/lwjgl-sdl-sources.jar" \
 mkdir -p "$SRC_DIR/org/lwjgl/sdl" "$SRC_DIR/org/lwjgl/glfw"
 unzip -p "$JAVA_WORK/lwjgl-sdl-sources.jar" org/lwjgl/sdl/SDLInit.java > "$SRC_DIR/org/lwjgl/sdl/SDLInit.java"
 unzip -p "$JAVA_WORK/lwjgl-sdl-sources.jar" org/lwjgl/sdl/SDLMouse.java > "$SRC_DIR/org/lwjgl/sdl/SDLMouse.java"
+unzip -p "$JAVA_WORK/lwjgl-sdl-sources.jar" org/lwjgl/sdl/SDLVideo.java > "$SRC_DIR/org/lwjgl/sdl/SDLVideo.java"
 cp "$ROOT/java/org/lwjgl/glfw/CallbackBridge.java" "$SRC_DIR/org/lwjgl/glfw/CallbackBridge.java"
 
 python3 - "$SRC_DIR/org/lwjgl/sdl" <<'PY'
@@ -83,6 +84,23 @@ new = """        if (CHECKS) {
     }"""
 assert old in s, 'SDL_SetWindowRelativeMouseMode anchor not found'
 mouse.write_text(s.replace(old, new, 1))
+
+# LWJGL 3.4.3 + JDK 28: SDL_GetDisplayName may return NULL; memUTF8Safe
+# then trips the FFM bounds check instead of returning null. Minecraft already
+# handles a null name, so make the wrapper do the null check explicitly.
+video = root / 'SDLVideo.java'
+s = video.read_text()
+old = """    public static @Nullable String SDL_GetDisplayName(@NativeType("SDL_DisplayID") int displayID) {
+        long __result = nSDL_GetDisplayName(displayID);
+        return memUTF8Safe(__result);
+    }"""
+new = """    public static @Nullable String SDL_GetDisplayName(@NativeType("SDL_DisplayID") int displayID) {
+        // Android's SDL backend may return a stale/null pointer for the display
+        // name; Minecraft only uses this as a label, so use a stable fallback.
+        return "Android display";
+    }"""
+assert old in s, 'SDL_GetDisplayName anchor not found'
+video.write_text(s.replace(old, new, 1))
 PY
 
 "$JAVAC" --release 8 -Xlint:-options \
@@ -90,6 +108,7 @@ PY
     -d "$CLASSES" \
     "$SRC_DIR/org/lwjgl/sdl/SDLInit.java" \
     "$SRC_DIR/org/lwjgl/sdl/SDLMouse.java" \
+    "$SRC_DIR/org/lwjgl/sdl/SDLVideo.java" \
     "$SRC_DIR/org/lwjgl/glfw/CallbackBridge.java"
 
 # Keep the upstream jars byte-identical except for the two patched SDL classes
@@ -97,7 +116,8 @@ PY
 cp "$JARS"/*.jar "$OUT"/
 "$JAR" uf "$OUT/lwjgl-sdl.jar" \
     -C "$CLASSES" org/lwjgl/sdl/SDLInit.class \
-    -C "$CLASSES" org/lwjgl/sdl/SDLMouse.class
+    -C "$CLASSES" org/lwjgl/sdl/SDLMouse.class \
+    -C "$CLASSES" org/lwjgl/sdl/SDLVideo.class
 "$JAR" uf "$OUT/lwjgl-glfw.jar" \
     -C "$CLASSES" org/lwjgl/glfw/CallbackBridge.class
 printf '%s' "$(date +%s)" > "$OUT/version"

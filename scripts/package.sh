@@ -2,6 +2,10 @@
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
+RUNTIME_DATE="${RUNTIME_DATE:-$(date -u +%Y%m%d)}"
+
+export RUNTIME_DATE
+
 require_tool python3
 require_tool zip
 mkdir -p "$DIST"
@@ -29,6 +33,7 @@ required=(
     "$NATIVE_DIR/libspirv-cross.so"
     "$NATIVE_DIR/libfreetype.so"
     "$NATIVE_DIR/libopenal.so"
+    "$NATIVE_DIR/libjemalloc.so"
     "$NATIVE_DIR/libc++_shared.so"
     "$NATIVE_DIR/jna/$JNA_VERSION/libjnidispatch.so"
 )
@@ -44,6 +49,7 @@ cp "$NATIVE_DIR/libSDL3.so" "$NATIVE_OUT"/
 cp "$NATIVE_DIR/libshaderc.so" "$NATIVE_OUT"/
 cp "$NATIVE_DIR/libspirv-cross.so" "$NATIVE_OUT"/
 cp "$NATIVE_DIR/libopenal.so" "$NATIVE_OUT"/
+cp "$NATIVE_DIR/libjemalloc.so" "$NATIVE_OUT"/
 cp "$NATIVE_DIR/libc++_shared.so" "$NATIVE_OUT"/
 mkdir -p "$JNA_OUT"
 cp "$NATIVE_DIR/jna/$JNA_VERSION/libjnidispatch.so" "$JNA_OUT"/
@@ -60,6 +66,7 @@ copy_license "$WORK/SPIRV-Cross/LICENSE" "SPIRV-Cross-Apache-2.0.txt"
 copy_license "$WORK/freetype/docs/FTL.TXT" "FreeType-FTL.txt"
 copy_license "$WORK/freetype/docs/GPLv2.TXT" "FreeType-GPLv2.txt"
 copy_license "$WORK/openal/COPYING" "OpenAL-Soft-LGPL-2.1.txt"
+copy_license "$WORK/jemalloc/COPYING" "jemalloc-2-Clause-BSD.txt"
 copy_license "$NDK/NOTICE" "libc++-NDK-NOTICE.txt"
 
 (
@@ -100,6 +107,7 @@ manifest = {
         'freetype': os.environ.get('FREETYPE_VERSION', 'VER-2-14-3'),
         'openal_soft': os.environ.get('OPENAL_VERSION', '1.25.2'),
         'oboe': os.environ.get('OBOE_VERSION', '1.11.2'),
+        'jemalloc': os.environ.get('JEMALLOC_VERSION', '5.4.0'),
         'jna': os.environ.get('JNA_VERSION', '5.17.0'),
     },
     'files': files,
@@ -121,7 +129,7 @@ from pathlib import Path
 zip_path, manifest_path, lwjgl, abi, api = sys.argv[1:]
 zip_path = Path(zip_path)
 manifest = {
-    'id': f'tessera-runtime-{lwjgl}-{abi}-20261124',
+    'id': f'tessera-runtime-{lwjgl}-{abi}-{os.environ["RUNTIME_DATE"]}',
     'vendor': 'Tessera',
     'lwjgl': lwjgl,
     'abi': abi,
@@ -146,6 +154,7 @@ manifest = {
         'freetype': os.environ.get('FREETYPE_VERSION', 'VER-2-14-3'),
         'openal_soft': os.environ.get('OPENAL_VERSION', '1.25.2'),
         'oboe': os.environ.get('OBOE_VERSION', '1.11.2'),
+        'jemalloc': os.environ.get('JEMALLOC_VERSION', '5.4.0'),
         'jna': os.environ.get('JNA_VERSION', '5.17.0'),
     },
     'install': {
