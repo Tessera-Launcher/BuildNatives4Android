@@ -2,6 +2,7 @@ package org.lwjgl.glfw;
 
 /** Game-VM side of the FCL input bridge. libpojavexec owns the native methods. */
 public final class CallbackBridge {
+    // SDLInit passes these to nativeNotifyLauncher.
     public static final int SDL = 0;
     public static final int INIT = 0;
 
@@ -21,7 +22,8 @@ public final class CallbackBridge {
     public static boolean sGamepadDirectInput;
 
     static {
-        System.loadLibrary("pojavexec");
+        // Only the shared grab flag is needed from the game VM now.
+        System.loadLibrary("tessera_bridge");
     }
 
     private CallbackBridge() {}

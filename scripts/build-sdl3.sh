@@ -10,6 +10,7 @@ mkdir -p "$WORK" "$NATIVE_DIR"
 SRC="$WORK/SDL"
 BUILD_DIR="$WORK/SDL-build"
 clone_if_missing https://github.com/libsdl-org/SDL.git "$SDL_VERSION" "$SRC"
+python3 "$ROOT/scripts/patch-sdl-android.py" "$SRC"
 
 rm -rf "$BUILD_DIR"
 cmake -S "$SRC" -B "$BUILD_DIR" -G "Unix Makefiles" \
